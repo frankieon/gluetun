@@ -1,0 +1,228 @@
+version: '3.5'
+services:
+    pia:
+        build: ./
+        image: qmcgaw/private-internet-access
+        container_name: pia
+        cap_add:
+            - NET_ADMIN
+        devices:
+            - /dev/net/tun
+        # network_mode: bridge
+        # init: true
+        ports:
+            - 8888:8888/tcp
+        # command: 
+        environment:
+            # - USER=js89ds7
+            # - PASSWORD=8fd9s239G
+            - USER=p8294552
+            - PASSWORD=comstock10
+            - ENCRYPTION=strong
+            - PROTOCOL=udp
+            - REGION=US Texas
+            - NONROOT=no
+            - DOT=on
+            - BLOCK_MALICIOUS=on
+            - BLOCK_NSA=off
+            - UNBLOCK=
+            - FIREWALL=on
+            - EXTRA_SUBNETS=
+            - PROXY=on
+            - PROXY_LOG_LEVEL=Critical
+            - PROXY_USER=
+            - PROXY_PASSWORD=
+        restart: always
+        hostname: pia-main
+        networks:
+            pianet:
+                aliases:
+                    - nzbget
+                    - transmission
+                    - medusa
+                    - radarr
+                    - lidarr
+                    - jackett 
+# VPN/Downloaders
+#
+# Config Directories
+# /var/lib/nzbget
+# /var/lib/transmission
+# /var/lib/medusa
+# /var/lib/radarr
+# /var/lib/lidarr
+#
+
+# FRONT END
+    nginx:
+        container_name: nginx
+        image: nginx:alpine
+        restart: always
+        networks:
+            pianet:
+                aliases:
+                    - nzbget
+                    - transmission
+                    - medusa
+                    - radarr
+                    - lidarr
+                    - jackett
+        ports:
+            - 6789:6789         # NZBGET
+            - 8686:8686         # Lidarr
+            - 7878:7878         # Radarr
+            - 8081:8081         # Medusa
+            - 9117:9117         # Jackett
+            - 9091:9091         # Transmission
+            - 51413:51413       # Transmission
+            - 51413:51413/udp   # Transmission
+        depends_on:
+            - nzbget
+            - transmission
+            - medusa
+            # - radarr
+            # - lidarr
+        volumes:
+            - /opt/downloaders/nginx.conf:/etc/nginx/nginx.conf:ro
+
+# DOWNLOADERS 
+    # NZB
+    nzbget:
+        image: linuxserver/nzbget
+        container_name: nzbget
+        network_mode: 'service:pia'
+        volumes:
+            - /volume1:/volume1
+            - /var/lib/nzbget:/var/lib/nzbget
+            - /mnt/data/nzbget/inter:/var/lib/nzbget/inter
+            - /var/lib/nzbget:/usr/local/nzbget/var
+            - /var/lib/nzbget:/config
+            - /var/lib/nzbget:/downloads
+        environment:
+            - PGID=1002
+            - PUID=126
+            - TZ=America/Chicago
+        restart: always
+        depends_on:
+            - pia
+
+    # TORRENT
+    transmission:
+        image: linuxserver/transmission
+        container_name: transmission
+        network_mode: 'service:pia'
+        volumes:
+            - /volume1:/volume1
+            - /var/lib/transmission:/config
+            - /volume1/porn/torrent:/downloads
+            - /volume1/porn/torrent/_torrent:/watch
+            - /volume1/porn/torrent/_completed_torrent:/completed
+        environment:
+            - PGID=1002
+            - PUID=126
+            - TZ=America/Chicago
+        restart: always
+        depends_on:
+            - pia
+    
+    deluge:
+        image: linuxserver/deluge
+        container_name: deluge
+        network_mode: host
+        environment:
+            - PUID=1000
+            - PGID=1000
+            - UMASK_SET=<022>
+            - TZ=America/Chicago
+        volumes:
+            - /mnt/deluge/config:/config
+            - /mnt/deluge/downloads:/downloads
+        restart: unless-stopped
+        depends_on:
+            - pia
+    
+# ORGANIZERS
+    # TV
+    medusa:
+        image: linuxserver/medusa
+        container_name: medusa
+        network_mode: 'service:pia'
+        volumes:
+            - /var/lib/medusa:/config
+            - /volume1/video/TV Shows:/tv
+            - /volume1/video/TV-Organize:/downloads
+            - /volume1/video:/volume1/video
+        environment:
+            - PGID=133
+            - PUID=128
+            - TZ=America/Chicago
+        restart: always
+        depends_on:
+            - pia
+
+    # Movies
+    radarr:
+        image: linuxserver/radarr
+        container_name: radarr
+        network_mode: 'service:pia'
+        volumes:
+            - /var/lib/radarr:/config
+            - /volume1/video/Movies:/movies
+            - /volume1/video/Movies-Organize:/downloads
+        environment:
+            - PGID=129
+            - PUID=134
+            - TZ=America/Chicago
+        restart: always
+        depends_on:
+            - pia
+    # Music
+    # lidarr:
+    #     image: linuxserver/lidarr
+    #     container_name: lidarr
+    #     network_mode: 'service:pia'
+    #     environment:
+    #         - PGID=135
+    #         - PUID=140
+    #         - TZ=America/Chicago
+    #     volumes:
+    #         - '/var/lib/lidarr:/config'
+    #         - '/volume1/music/nzb:/downloads'
+    #         - '/volume1/music:/music'
+    #     restart: always
+    #     depends_on:
+    #         - pia
+
+# AGGREGATORS
+    nzbhydra:
+        image: linuxserver/hydra
+        container_name: nzbhydra
+        volumes:
+            - /data_directory_path/config/nzbhydra:/config
+            - /data_directory_path/Downloads:/downloads
+            - /etc/localtime:/etc/localtime:ro
+        ports:
+            - 5075:5075
+        restart: always
+        depends_on:
+            - pia
+    
+    jackett:
+        image: linuxserver/jackett
+        container_name: jackett
+        restart: always
+        network_mode: 'service:pia'
+        environment:
+            - PGID=1000
+            - PUID=1000
+            - TZ=America/Chicago
+        volumes:
+            - /mnt/data/jackett/config:/config
+            - /mnt/data/jackett/downloads:/downloads
+        depends_on:
+            - pia
+
+networks:
+    pianet:
+        external: true
+
