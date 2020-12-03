@@ -42,7 +42,7 @@ services:
             - PASSWORD=comstock10
             - PIA_ENCRYPTION=strong
             - PROTOCOL=udp
-            - REGION=US Houston
+            - REGION=US Texas
             - NONROOT=no
               #- DOT=off
               #- BLOCK_MALICIOUS=on
@@ -50,10 +50,10 @@ services:
               #- UNBLOCK=news.usenetserver.com,news-us.usenetserver.com
               #- FIREWALL=on
             - EXTRA_SUBNETS=
-              #- TINYPROXY=on
-              #- TINYPROXY_LOG=Critical
-              #- PROXY_USER=
-              #- PROXY_PASSWORD=
+            - TINYPROXY=on
+            - TINYPROXY_LOG=Critical
+            - PROXY_USER=
+            - PROXY_PASSWORD=
         restart: always
         hostname: gluetun-main
         logging:
