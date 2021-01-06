@@ -38,8 +38,6 @@ services:
             #- TZ=Central
             # Allow for example your LAN, set to: 192.168.1.0/24
             # - EXTRA_SUBNETS=
-            - USER=p8294552
-            - PASSWORD=comstock10
             - PIA_ENCRYPTION=strong
             - PROTOCOL=udp
             - REGION=US Texas
