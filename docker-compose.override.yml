@@ -68,7 +68,8 @@ services:
                     - medusa
                     - radarr
                     - lidarr
-                    - jackett 
+                    - jackett
+                    - deluge
 # VPN/Downloaders
 #
 # Config Directories
@@ -93,18 +94,22 @@ services:
                     - radarr
                     - lidarr
                     - jackett
+                    - deluge
         ports:
+            - 80:80
             - 6789:6789         # NZBGET
             - 8686:8686         # Lidarr
             - 7878:7878         # Radarr
             - 8081:8081         # Medusa
             - 9117:9117         # Jackett
+            - 8112:8112         # Deluge
             - 9091:9091         # Transmission
             - 51413:51413       # Transmission
             - 51413:51413/udp   # Transmission
         depends_on:
             - nzbget
             - transmission
+            - deluge
             - medusa
             # - radarr
             # - lidarr
@@ -161,16 +166,17 @@ services:
     deluge:
         image: linuxserver/deluge
         container_name: deluge
-        network_mode: host
+        network_mode: 'service:gluetun'
         environment:
             - PUID=1000
             - PGID=1000
-            - UMASK_SET=<022>
             - TZ=America/Chicago
+            - DELUGE_LOGLEVEL=error #optional
         volumes:
             - /mnt/deluge/config:/config
-            - /mnt/deluge/downloads:/downloads
-        restart: unless-stopped
+            - /volume1:/volume1
+            - /volume1/porn/torrent:/downloads
+        restart: always
         depends_on:
             - gluetun
     
